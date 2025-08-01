@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Upload API</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .error { background-color: #ffe6e6; }
+        .success { background-color: #e6ffe6; }
+    </style>
+</head>
+<body>
+    <h1>Test Upload API</h1>
+    
+    <div>
+        <h3>Select Files:</h3>
+        <input type="file" id="fileInput" multiple accept=".pdf,.docx">
+        <button onclick="testUpload()">Test Upload</button>
+        <button onclick="testDebug()">Debug Upload</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+        
+        function log(message, isError = false) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${isError ? 'error' : 'success'}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            results.appendChild(div);
+            console.log(message);
+        }
+        
+        async function testDebug() {
+            const fileInput = document.getElementById('fileInput');
+            const files = fileInput.files;
+            
+            if (files.length === 0) {
+                log('Please select files first', true);
+                return;
+            }
+            
+            const formData = new FormData();
+            for (let file of files) {
+                formData.append('files', file);
+            }
+            
+            try {
+                log(`Testing debug endpoint with ${files.length} files...`);
+                
+                const response = await fetch(`${API_BASE}/debug-upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    log(`Debug successful: ${JSON.stringify(result, null, 2)}`);
+                } else {
+                    log(`Debug failed (${response.status}): ${JSON.stringify(result)}`, true);
+                }
+            } catch (error) {
+                log(`Debug error: ${error.message}`, true);
+            }
+        }
+        
+        async function testUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const files = fileInput.files;
+            
+            if (files.length === 0) {
+                log('Please select files first', true);
+                return;
+            }
+            
+            const formData = new FormData();
+            for (let file of files) {
+                formData.append('files', file);
+            }
+            
+            try {
+                log(`Uploading ${files.length} files...`);
+                
+                const response = await fetch(`${API_BASE}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    log(`Upload successful: ${result.message}`);
+                    log(`Uploaded: ${result.uploaded_files.length}, Failed: ${result.failed_files.length}`);
+                    
+                    if (result.failed_files.length > 0) {
+                        result.failed_files.forEach(failure => {
+                            log(`Failed: ${failure.filename} - ${failure.error}`, true);
+                        });
+                    }
+                } else {
+                    log(`Upload failed (${response.status}): ${JSON.stringify(result)}`, true);
+                }
+            } catch (error) {
+                log(`Upload error: ${error.message}`, true);
+            }
+        }
+        
+        // Test API health on load
+        fetch(`http://localhost:8000/health`)
+            .then(response => response.json())
+            .then(data => log(`API Health: ${data.status}`))
+            .catch(error => log(`API Health Check Failed: ${error.message}`, true));
+    </script>
+</body>
+</html>

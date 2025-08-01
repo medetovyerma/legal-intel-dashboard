@@ -1,0 +1,21 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pydantic
+pydantic-settings
+python-multipart
+python-docx
+PyPDF2
+pdfplumber
+openai
+python-dotenv
+pytest
+pytest-asyncio
+pytest-cov
+httpx
+
+# Optional development dependencies
+black
+flake8
+isort
+mypy
